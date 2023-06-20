@@ -1,0 +1,46 @@
+from flask import Flask, render_template, request, redirect
+from collections import defaultdict
+
+app = Flask(__name__)  # Create a Flask application
+
+# Define a defaultdict to store URLs and their counts
+url_store = defaultdict(lambda: {'url': '', 'count': 0})
+
+@app.route('/')  # Define the root route
+def index():
+    return render_template('index.html')  # Render the index.html template
+
+@app.route('/shorten', methods=['POST'])  # Define the /shorten route with POST method
+def shorten_url():
+    long_url = request.form['long_url']  # Get the long URL from the request form
+    short_id = generate_short_id()  # Generate a short ID
+
+    url_store[short_id] = {'url': long_url, 'count': 0}  # Store the long URL and count in the url_store dictionary
+
+    return short_id  # Return the generated short ID
+
+@app.route('/<short_id>')  # Define a route with a dynamic parameter (short_id)
+def redirect_url(short_id):
+    if short_id in url_store:  # Check if the short_id exists in the url_store
+        long_url = url_store[short_id]['url']  # Get the long URL associated with the short_id
+        url_store[short_id]['count'] += 1  # Increment the count for the short_id
+        return redirect(long_url, code=302)  # Redirect to the long URL
+    else:
+        return 'Invalid URL'  # Return an error message for invalid URL
+
+@app.route('/track/<short_id>')  # Define a route to track the number of times a URL is accessed
+def track_url(short_id):
+    if short_id in url_store:  # Check if the short_id exists in the url_store
+        url_store[short_id]['count'] += 1  # Increment the count for the short_id
+        return redirect(url_store[short_id]['url'], code=302)  # Redirect to the long URL
+    else:
+        return 'Invalid URL'  # Return an error message for invalid URL
+
+def generate_short_id():
+    # Implementation for generating a unique short ID
+    # You can use your own logic here, such as generating a random string or using a hashing algorithm
+    # For simplicity, this example uses a sequential ID starting from 1
+    return str(len(url_store) + 1)
+
+if __name__ == '__main__':
+    app.run(debug=True)
